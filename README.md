@@ -4,6 +4,7 @@ Small extension for copying lastpass password to your clipboard via the albert l
 ## Install
 Clone this repo to `~/.local/share/albert/org.albert.extension.python/modules/`
 
+Go to the albert settings Extensions->Python and check lastpass_albert.
 ## How does it work?
 CLI commands:
 - lp login {email}
