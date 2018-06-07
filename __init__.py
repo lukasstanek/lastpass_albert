@@ -25,12 +25,13 @@ def handleQuery(query):
         statusProcess = subprocess.run(['lpass', 'status'], stdout=subprocess.DEVNULL)
 
         #not logged in
-        if statusProcess.returncode != 0:
-            items.extend(handle_query_while_logged_out(query))
-        else:
+        if statusProcess.returncode == 0:
             items.extend(handle_query_while_logged_in(query))
 
         items.extend(handle_cli_commands(query))
+
+        if statusProcess.returncode != 0:
+            items.extend(handle_query_while_logged_out(query))
 
         return items
     
@@ -62,7 +63,8 @@ def handle_query_while_logged_in(query):
                 subtext=f"{username} - Group: {group}", 
                 icon=lockIcon,
                 actions=[
-                    FuncAction("Copy Password", lambda id=lp_id: subprocess.run(['lpass', 'show', '--password', '-c', id]))
+                    FuncAction("Copy password", lambda id=lp_id: subprocess.run(['lpass', 'show', '--password', '-c', id])),
+                    FuncAction("Copy username", lambda id=lp_id: subprocess.run(['lpass', 'show', '--username', '-c', id]))
                 ]))
     return items
 
@@ -78,7 +80,7 @@ def handle_cli_commands(query):
         items.append(
             Item(
                 text="Login", 
-                subtext="lp login {email}", 
+                subtext="lpass login {email}", 
                 completion="lp login ", 
                 icon=termIcon,
                 actions=[
@@ -88,19 +90,20 @@ def handle_cli_commands(query):
         items.append(
             Item(
                 text="Logout", 
-                subtext="lp logout", 
+                subtext="lpass logout", 
                 completion="lp logout", 
                 icon=termIcon,
                 actions=[
                     ProcAction("Logout", ["lpass", "logout", "-f"])
             ]))
-    # if splits[0] in "sync":
-    #     items.append(
-    #         Item(
-    #             text="Sync", 
-    #             subtext="lp sync", 
-    #             completion="lp sync", 
-    #             actions=[
-    #                 ProcAction("Sync", ["lpass", "sync"])
-            # ]))
+    if splits[0] in "sync":
+        items.append(
+            Item(
+                text="Sync", 
+                subtext="lpass sync", 
+                completion="lp sync",
+                icon=termIcon, 
+                actions=[
+                    ProcAction("Sync", ["lpass", "sync"])
+            ]))
     return items
