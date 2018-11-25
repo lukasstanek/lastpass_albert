@@ -4,6 +4,7 @@ import subprocess
 from albertv0 import *
 import re
 import os
+import json
 
 __iid__ = "PythonInterface/v0.2"
 __prettyname__ = "LastPass"
@@ -15,7 +16,7 @@ __dependencies__ = []
 termIcon = "%s/%s.svg" % (os.path.dirname(__file__), 'terminal')
 lockIcon = "%s/%s.svg" % (os.path.dirname(__file__), 'unlock')
 
-ls_pattern = re.compile('^(.*)\/(.+) \[id: ([0-9]{19})]')
+ls_pattern = re.compile('^[^ ]+ [^ ]+ ([^/]*)\/(.*) \[id: ([0-9]{19})] \[username: (.*)]$')
 
 def handleQuery(query):
 
@@ -38,7 +39,7 @@ def handleQuery(query):
 def handle_query_while_logged_in(query):
     items = []
     # query lastpass for passwords
-    result = subprocess.run(["lpass", "ls"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)            
+    result = subprocess.run(["lpass", "ls", "-l"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)            
 
     lines = result.stdout.splitlines()
     for line in lines:
@@ -51,11 +52,12 @@ def handle_query_while_logged_in(query):
         group = matches.group(1)
         domain = matches.group(2)
         lp_id = matches.group(3)
+        username = matches.group(4)
 
-        if query.string not in domain:
+        if query.string not in domain and query.string not in username:
             continue
 
-        username = subprocess.run(['lpass', 'show', '--username', lp_id], stdout=subprocess.PIPE).stdout.decode('utf-8')
+        #username = subprocess.run(['lpass', 'show', '--username', lp_id], stdout=subprocess.PIPE).stdout.decode('utf-8')
 
         items.append(
             Item(
@@ -84,7 +86,7 @@ def handle_cli_commands(query):
                 completion="lp login ", 
                 icon=termIcon,
                 actions=[
-                    ProcAction("Login", ["lpass", "login", email])
+                    FuncAction("Login", lambda: do_login(email))
             ]))
     if splits[0] in "logout":
         items.append(
@@ -107,3 +109,35 @@ def handle_cli_commands(query):
                     ProcAction("Sync", ["lpass", "sync"])
             ]))
     return items
+
+def do_login(email):
+    if email is None or email is "":
+        email = get_email_from_config()
+    if email is None or email is "":
+        return
+    result = subprocess.run(['lpass', 'login', email])
+    if result.returncode == 0:
+        print("Saving mail to config")
+        save_email_to_config(email)
+
+
+def get_email_from_config():
+    config_file = configLocation() + '/albert_lastpass'
+    if not os.path.isfile(config_file):
+        print("No config file found.")
+        return None
+
+    with open(config_file) as f:
+        config = json.load(f)
+        mail = config['email']
+        if mail is not None and mail is not '':
+            return mail
+        else:
+            return None
+
+def save_email_to_config(email):
+    config_file = configLocation() + '/albert_lastpass'
+    with open(config_file, 'w+') as f:
+        config = {"email": email}
+        json.dump(config, f)
+    
