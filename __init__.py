@@ -115,7 +115,9 @@ def do_login(email):
         email = get_email_from_config()
     if email is None or email is "":
         return
-    result = subprocess.run(['lpass', 'login', email])
+    env = os.environ.copy()
+    env['LPASS_AGENT_TIMEOUT'] = '28800'
+    result = subprocess.run(['lpass', 'login', email], env=env)
     if result.returncode == 0:
         print("Saving mail to config")
         save_email_to_config(email)
