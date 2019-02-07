@@ -41,6 +41,8 @@ def handle_query_while_logged_in(query):
     # query lastpass for passwords
     result = subprocess.run(["lpass", "ls", "-l"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)            
 
+    queryString = query.string.lower()
+
     lines = result.stdout.splitlines()
     for line in lines:
         line = line.decode('utf-8')
@@ -54,7 +56,7 @@ def handle_query_while_logged_in(query):
         lp_id = matches.group(3)
         username = matches.group(4)
 
-        if query.string not in domain and query.string not in username:
+        if queryString not in domain and queryString not in username:
             continue
 
         #username = subprocess.run(['lpass', 'show', '--username', lp_id], stdout=subprocess.PIPE).stdout.decode('utf-8')
