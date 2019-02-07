@@ -56,7 +56,7 @@ def handle_query_while_logged_in(query):
         lp_id = matches.group(3)
         username = matches.group(4)
 
-        if queryString not in domain and queryString not in username:
+        if queryString not in domain.lower() and queryString not in username.lower():
             continue
 
         #username = subprocess.run(['lpass', 'show', '--username', lp_id], stdout=subprocess.PIPE).stdout.decode('utf-8')
